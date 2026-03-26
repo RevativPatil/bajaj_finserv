@@ -10,35 +10,35 @@ import google.generativeai as genai
 from dotenv import load_dotenv
 
 # -----------------------------
-# ⚙️ CONFIGURATION
+# CONFIGURATION
 # -----------------------------
 st.set_page_config(
-    page_title="AI Document Chatbot 🤖",
+    page_title="AI Document Chatbot",
     page_icon="https://cdn-icons-png.flaticon.com/512/4712/4712102.png",
     layout="wide"
 )
 
-# 🔑 Load environment variables
+# Load environment variables
 load_dotenv()
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-# 🧩 Embedding model
+# Embedding model
 embed_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 
 # -----------------------------
-# 🧠 CHROMADB SETUP
+# CHROMADB SETUP
 # -----------------------------
 client_chroma = chromadb.PersistentClient(path="./chroma_db")
 collection = client_chroma.get_or_create_collection(name="docs_embeddings")
 
 # -----------------------------
-# 💬 CHAT HISTORY
+# CHAT HISTORY
 # -----------------------------
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
 # -----------------------------
-# 🌈 STYLING
+#STYLING
 # -----------------------------
 st.markdown("""
 <style>
@@ -74,20 +74,20 @@ p, label { color: #b0b0b0 !important; }
 </style>
 <header>
     <img src="https://cdn-icons-png.flaticon.com/512/4712/4712102.png" width="100">
-    <h1>🤖 AI Document Chatbot</h1>
+    <h1>AI Document Chatbot</h1>
     <p>Upload • Summarize • Chat — with a human touch</p>
 </header>
 """, unsafe_allow_html=True)
 
 # -----------------------------
-# 📂 FILE UPLOAD
+# FILE UPLOAD
 # -----------------------------
-uploaded_files = st.file_uploader("📂 Upload one or more documents",
+uploaded_files = st.file_uploader("Upload one or more documents",
                                   type=["pdf", "docx", "txt"], accept_multiple_files=True)
 
 
 # -----------------------------
-# 📄 TEXT EXTRACTOR
+# TEXT EXTRACTOR
 # -----------------------------
 def extract_text(file):
     text = ""
@@ -109,17 +109,17 @@ def extract_text(file):
         else:
             text = file.read().decode("utf-8")
     except Exception as e:
-        st.warning(f"⚠️ Couldn't read {file.name}. Reason: {e}")
+        st.warning(f"Couldn't read {file.name}. Reason: {e}")
     return text
 
 
 # -----------------------------
-# 🧠 PROCESS AND STORE FILES
+# PROCESS AND STORE FILES
 # -----------------------------
 if uploaded_files:
     model = genai.GenerativeModel("gemini-2.0-flash")
     for uploaded_file in uploaded_files:
-        with st.spinner(f"🧩 Processing {uploaded_file.name}..."):
+        with st.spinner(f"Processing {uploaded_file.name}..."):
             text_data = extract_text(uploaded_file)
 
             splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
@@ -138,18 +138,18 @@ if uploaded_files:
                 response = model.generate_content(prompt)
                 summary = response.text.strip()
             except Exception as e:
-                summary = f"⚠️ Error generating summary: {e}"
+                summary = f"Error generating summary: {e}"
 
-            st.subheader(f"📘 Summary for {uploaded_file.name}:")
+            st.subheader(f"Summary for {uploaded_file.name}:")
             st.markdown(f"<div class='chat-bubble-bot'>{summary}</div>", unsafe_allow_html=True)
 
-    st.success("✅ All files processed and stored!")
+    st.success("All files processed and stored!")
 
 
 # -----------------------------
 # 💬 CHAT FUNCTION
 # -----------------------------
-st.subheader("💬 Ask Anything About Your Documents")
+st.subheader("Ask Anything About Your Documents")
 query = st.text_input("Ask here...")
 
 
@@ -158,7 +158,7 @@ if query:
     context = "\n\n".join(results["documents"][0]) if results["documents"] else ""
 
     if not context.strip():
-        answer = "❌ The requested information is not available in the document."
+        answer = "The requested information is not available in the document."
     else:
         prompt = f"""
 You are an AI assistant that must answer strictly based on the provided document content.
@@ -167,19 +167,18 @@ You are an AI assistant that must answer strictly based on the provided document
 - Use ONLY the information found directly in the "Context".
 - Do NOT guess, assume, or invent information.
 - If the context does not clearly contain the answer, respond EXACTLY with:
-  "❌ The requested information is not available in the document."
+  "The requested information is not available in the document."
 - If the context includes partial information, respond with:
-  "⚠️ Partial information found:" and then answer only using available content.
+  "Partial information found:" and then answer only using available content.
 - Do not provide external knowledge beyond the document.
 
 ---
 
-📄 **Context:**
+**Context:**
 \"\"\" 
 {context}
 \"\"\"
-
-❓ **User Query:** "{query}"
+ **User Query:** "{query}"
 
 Now generate the final grounded answer:
 """
@@ -188,7 +187,7 @@ Now generate the final grounded answer:
             response = model.generate_content(prompt)
             answer = response.text.strip()
         except Exception as e:
-            answer = f"⚠️ Gemini Error: {str(e)}"
+            answer = f"Gemini Error: {str(e)}"
 
 
     st.session_state.chat_history.append(("User", query))
@@ -198,10 +197,10 @@ Now generate the final grounded answer:
     st.markdown(f"<div class='chat-bubble-bot'><b>Bot:</b> {answer}</div>", unsafe_allow_html=True)
 
 # -----------------------------
-# 🕒 CHAT HISTORY
+# CHAT HISTORY
 # -----------------------------
 if st.session_state.chat_history:
-    st.subheader("🕒 Chat History")
+    st.subheader("Chat History")
     for role, msg in st.session_state.chat_history:
         bubble = 'chat-bubble-user' if role == "User" else 'chat-bubble-bot'
         st.markdown(f"<div class='{bubble}'><b>{role}:</b> {msg}</div>", unsafe_allow_html=True)
